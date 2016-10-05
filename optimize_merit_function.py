@@ -6,6 +6,7 @@ import multiprocessing
 import time
 start_time = time.time()
 
+
 class Player(object):
 
     show_moves = 0
@@ -15,7 +16,6 @@ class Player(object):
     wins1 = 0
     wins2 = 0
     total_rounds = 0.0
-
 
     def __init__(self, player_id, type="bot", filename="main.py"):
         self.type = type
@@ -117,7 +117,8 @@ class Player(object):
 
             return "place_disc %s" % input_column
 
-def Run_OO_test(game_num):
+
+def run_oo_test(game_num):
 
     Player.reset_board()
 
@@ -132,26 +133,24 @@ def Run_OO_test(game_num):
         move = curr_player.player_play().rstrip()
         Player.board_update(move, player_id)
 
-        if dhw.did_he_win(Player.board, player_id):
+        if dhw.did_he_win(Player.board, player_id, int(move.split()[1])):
             print "Game %i: player %i win" % (game_num, player_id)
             if player_id == 1: Player.wins1 += 1
             if player_id == 2: Player.wins2 += 1
             Player.total_rounds += Player.i_round
             break
 
-    #print("round %i" % Player.i_round)
-
 if __name__ == '__main__':
 
     # main - test behaviour
-    num_of_games = 10
+    num_of_games = 100
     Player.show_moves = "no"
     player1 = Player(1, type="bot", filename="main_rnd.py")
     player2 = Player(2, type="bot", filename="main.py")
     Player.display_board(Player.board, 0, 0)
 
     for game in range(0, num_of_games):
-        Run_OO_test(game)
+        run_oo_test(game)
 
     print "player1 won %i times" % Player.wins1
     print "player2 won %i times" % Player.wins2

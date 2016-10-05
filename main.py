@@ -1,4 +1,4 @@
-#---------------------------------------------------------------------#
+# ------------------------------------------------------------------- #
 # Zli Robot by Dusan                                                  #
 # ============                                                        #
 # Last update: 26 Sep 2016                                            #
@@ -9,7 +9,7 @@
 # @author Lukas Knoepfel <shylux@gmail.com>                           #
 # @version 1.0                                                        #
 # @license MIT License (http://opensource.org/licenses/MIT)           #
-#---------------------------------------------------------------------#
+# ------------------------------------------------------------------- #
 
 from sys import stdin, stdout
 import numpy as np
@@ -36,37 +36,37 @@ class Bot(object):
             return 1
 
         # win if possible
-        for try_column in range(0,self.board.shape[1]):
+        for try_column in range(0, self.board.shape[1]):
             if 0 == self.board[0, try_column]:
                 new_board = self.simulate_place_disc(self.board, try_column, self.id())
-                if dhw.did_he_win(new_board, self.id()):
+                if dhw.did_he_win(new_board, self.id(), try_column):
                     self.place_disc(try_column, "win")
                     return 1
 
         # don't loose if in danger
         for try_column in range(0, self.board.shape[1]):
-            if 0 == self.board[0,try_column]:
+            if 0 == self.board[0, try_column]:
                 new_board = self.simulate_place_disc(self.board, try_column, 3 - self.id())
-                if dhw.did_he_win(new_board, 3 - self.id()):
+                if dhw.did_he_win(new_board, 3 - self.id(), try_column):
                     self.place_disc(try_column, "don't loose")
                     return 1
 
         # don't fall in trap!
         forbidden_columns = []
         for try_column in range(0, self.board.shape[1]):
-            if 0 == self.board[0,try_column]:
+            if 0 == self.board[0, try_column]:
                 new_board = self.simulate_place_disc(self.board, try_column, self.id())         # my move
                 new_board = self.simulate_place_disc(new_board, try_column, 3 - self.id())      # enemy move
-                if dhw.did_he_win(new_board, 3 - self.id()):
+                if dhw.did_he_win(new_board, 3 - self.id(), try_column):
                     forbidden_columns.append(try_column)
 
         # don't ruin my trap
         less_forbidden_columns = []
         for try_column in range(0, self.board.shape[1]):
-            if 0 == self.board[0,try_column]:
+            if 0 == self.board[0, try_column]:
                 new_board = self.simulate_place_disc(self.board, try_column, 3 - self.id())         # 'my' move
                 new_board = self.simulate_place_disc(new_board, try_column, self.id())              # my move
-                if dhw.did_he_win(new_board, self.id()):
+                if dhw.did_he_win(new_board, self.id(), try_column):
                     if try_column not in forbidden_columns:
                         less_forbidden_columns.append(try_column)
 

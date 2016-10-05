@@ -33,7 +33,7 @@ class Bot(object):
         for try_column in range(0,self.board.shape[1]):
             if 0 == self.board[0, try_column]:
                 new_board = self.simulate_place_disc(self.board, try_column, self.id())
-                if dhw.did_he_win(new_board, self.id()):
+                if dhw.did_he_win(new_board, self.id(), try_column):
                     self.place_disc(try_column)
                     return 1
 
@@ -41,7 +41,7 @@ class Bot(object):
         for try_column in range(0, self.board.shape[1]):
             if 0 == self.board[0,try_column]:
                 new_board = self.simulate_place_disc(self.board, try_column, 3 - self.id())
-                if dhw.did_he_win(new_board, 3 - self.id()):
+                if dhw.did_he_win(new_board, 3 - self.id(), try_column):
                     self.place_disc(try_column)
                     return 1
 
@@ -51,7 +51,7 @@ class Bot(object):
             if 0 == self.board[0,try_column]:
                 new_board = self.simulate_place_disc(self.board, try_column, self.id())         # my move
                 new_board = self.simulate_place_disc(new_board, try_column, 3 - self.id())      # enemy move
-                if dhw.did_he_win(new_board, 3 - self.id()):
+                if dhw.did_he_win(new_board, 3 - self.id(), try_column):
                     if try_column not in forbidden_columns: forbidden_columns.append(try_column)
 
         # don't ruin my trap
@@ -59,7 +59,7 @@ class Bot(object):
             if 0 == self.board[0,try_column]:
                 new_board = self.simulate_place_disc(self.board, try_column, 3 - self.id())         # 'my' move
                 new_board = self.simulate_place_disc(new_board, try_column, self.id())              # my move
-                if dhw.did_he_win(new_board, self.id()):
+                if dhw.did_he_win(new_board, self.id(), try_column):
                     if try_column not in forbidden_columns: forbidden_columns.append(try_column)
 
         # allow forbidden_columns if no other choice

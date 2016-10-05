@@ -114,11 +114,11 @@ class Player(object):
 
 
 # main - test behaviour
-num_of_games = 1
+num_of_games = 100
 wins1 = 0
 wins2 = 0
 rounds = 0.0
-Player.show_moves = "yes"
+Player.show_moves = "no"
 player1 = Player(1, type="bot", filename="main_rnd.py")
 player2 = Player(2, type="bot", filename="main.py")
 Player.display_board(Player.board, 0, 0)
@@ -137,7 +137,7 @@ for game_num in range(0, num_of_games):
         move = curr_player.player_play().rstrip()
         Player.board_update(move, player_id)
 
-        if dhw.did_he_win(Player.board, player_id):
+        if dhw.did_he_win(Player.board, player_id, int(move.split()[1])):
             print "Game %i: player %i win" % (game_num, player_id)
             if player_id == 1: wins1 += 1
             if player_id == 2: wins2 += 1
@@ -160,4 +160,4 @@ plt.show()
 print "time elapsed: {:.2f}s".format(time.time() - start_time)
 #  beep at the end
 import os
-os.system('say -v "Whisper" "your program has finished"')
+#os.system('say -v "Whisper" "your program has finished"')
