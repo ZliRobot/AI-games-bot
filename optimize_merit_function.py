@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import subprocess
 import did_he_win as dhw
+import multiprocessing
 import time
 start_time = time.time()
 
@@ -11,6 +12,10 @@ class Player(object):
     i_round = 1
     t_move = 1000
     board = np.zeros((6, 7), dtype=np.uint8)
+    wins1 = 0
+    wins2 = 0
+    total_rounds = 0.0
+
 
     def __init__(self, player_id, type="bot", filename="main.py"):
         self.type = type
@@ -112,18 +117,8 @@ class Player(object):
 
             return "place_disc %s" % input_column
 
+def Run_OO_test(game_num):
 
-# main - test behaviour
-num_of_games = 1
-wins1 = 0
-wins2 = 0
-rounds = 0.0
-Player.show_moves = "yes"
-player1 = Player(1, type="bot", filename="main_rnd.py")
-player2 = Player(2, type="bot", filename="main.py")
-Player.display_board(Player.board, 0, 0)
-
-for game_num in range(0, num_of_games):
     Player.reset_board()
 
     for Player.i_round in range(1, 43):
@@ -139,25 +134,37 @@ for game_num in range(0, num_of_games):
 
         if dhw.did_he_win(Player.board, player_id):
             print "Game %i: player %i win" % (game_num, player_id)
-            if player_id == 1: wins1 += 1
-            if player_id == 2: wins2 += 1
-            rounds += Player.i_round
+            if player_id == 1: Player.wins1 += 1
+            if player_id == 2: Player.wins2 += 1
+            Player.total_rounds += Player.i_round
             break
 
     #print("round %i" % Player.i_round)
 
-print "player1 won %i times" % wins1
-print "player2 won %i times" % wins2
-print "%.2f rounds average" % (rounds/num_of_games)
+if __name__ == '__main__':
 
-if player1.type == "bot":
-    player1.input_method.kill()
-if player2.type == "bot":
-    player2.input_method.kill()
-plt.ioff()
-plt.show()
+    # main - test behaviour
+    num_of_games = 10
+    Player.show_moves = "no"
+    player1 = Player(1, type="bot", filename="main_rnd.py")
+    player2 = Player(2, type="bot", filename="main.py")
+    Player.display_board(Player.board, 0, 0)
 
-print "time elapsed: {:.2f}s".format(time.time() - start_time)
-#  beep at the end
-import os
-os.system('say -v "Whisper" "your program has finished"')
+    for game in range(0, num_of_games):
+        Run_OO_test(game)
+
+    print "player1 won %i times" % Player.wins1
+    print "player2 won %i times" % Player.wins2
+    print "%.2f rounds average" % (Player.total_rounds/num_of_games)
+
+    if player1.type == "bot":
+        player1.input_method.kill()
+    if player2.type == "bot":
+        player2.input_method.kill()
+    plt.ioff()
+    plt.show()
+
+    print "time elapsed: {:.2f}s".format(time.time() - start_time)
+    #  beep at the end
+    import os
+    os.system('say -v "Whisper" "your program has finished"')

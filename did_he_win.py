@@ -1,4 +1,6 @@
-def did_he_win(board, player_id):
+def did_he_win(board, player_id, played_column=0):
+
+
 
     # horizontal
     for raw in range(0, board.shape[0]):
