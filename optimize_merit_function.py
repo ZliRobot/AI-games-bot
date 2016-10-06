@@ -143,7 +143,7 @@ def run_oo_test(game_num):
 if __name__ == '__main__':
 
     # main - test behaviour
-    num_of_games = 100
+    num_of_games = 1000
     Player.show_moves = "no"
     player1 = Player(1, type="bot", filename="main_rnd.py")
     player2 = Player(2, type="bot", filename="main.py")

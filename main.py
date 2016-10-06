@@ -84,10 +84,10 @@ class Bot(object):
                             and try_column not in less_forbidden_columns \
                             and self.board[0,try_column] == 0:
                 new_board = self.simulate_place_disc(self.board, try_column, self.id())
-                merit_function[try_column] = cs.merit_function(new_board, self.id())
+                merit_function[try_column] = cs.merit_function(new_board, self.id(), try_column)
                 # what if I allow to opponent to play this column:
                 new_board = self.simulate_place_disc(self.board, try_column, 3 - self.id())
-                merit_function[try_column] += 0.7 * cs.merit_function(new_board, 3 - self.id())
+                merit_function[try_column] += 0.7 * cs.merit_function(new_board, 3 - self.id(), try_column)
 
         if np.nonzero(merit_function) == 0:     # merit function useless, play randomly
             rannum = random.randrange(7)
