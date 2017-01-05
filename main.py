@@ -12,11 +12,10 @@
 # ------------------------------------------------------------------- #
 
 from sys import stdin, stdout
-import numpy as np
-import random
-import time
-import did_he_win as dhw
 import count_open_segmets as cs
+import did_he_win as dhw
+import numpy as np
+import time
 
 
 class Bot(object):
@@ -25,79 +24,73 @@ class Bot(object):
     round = -1
     board = np.zeros((6, 7), dtype=np.uint8)  # Access with [row_nr, col_nr]. [0,0] is on the top left.
     timeout = -1
+    mf_coeff = np.array([0., 1., 5., 1., 3., 100000., 0.7])
 
     def make_turn(self):
         """ This method is for calculating and executing the next play.
             Make the play by calling place_disc exactly once.
         """
+        # height = self.board.shape[0]
+        width = self.board.shape[1]
+        board = self.board
+
         # if play first, start in the middle
-        if np.count_nonzero(self.board) == 0:
-            self.place_disc(self.board.shape[1] / 2, "middle")
+        if np.count_nonzero(board) == 0:
+            self.place_disc(width / 2, "middle")
             return 1
 
-        # win if possible
-        for try_column in range(0, self.board.shape[1]):
-            if 0 == self.board[0, try_column]:
-                new_board = self.simulate_place_disc(self.board, try_column, self.id())
+        forbidden_columns = []
+        less_forbidden_columns = []
+        mf_value = np.ones(width) * (-1E100)
+
+        # what if I play column:
+        for try_column in range(0, width):
+            if 0 == board[0, try_column]:
+                new_board = self.simulate_place_disc(board, try_column, self.id())
                 if dhw.did_he_win(new_board, self.id(), try_column):
+                    # win if possible
                     self.place_disc(try_column, "win")
                     return 1
+                else:
+                    # calculate first part of merit function
+                    mf_value[try_column] = cs.merit_function(new_board, self.id(), try_column, self.mf_coeff[0:6])
+                    # check for trap
+                    new_board = self.simulate_place_disc(new_board, try_column, 3 - self.id())  # enemy move
+                    if dhw.did_he_win(new_board, 3 - self.id(), try_column):
+                        forbidden_columns.append(try_column)
 
-        # don't loose if in danger
-        for try_column in range(0, self.board.shape[1]):
-            if 0 == self.board[0, try_column]:
-                new_board = self.simulate_place_disc(self.board, try_column, 3 - self.id())
+        # what if I don't play column (ignore forbidden columns)
+        for try_column in range(0, width):
+            if 0 == board[0, try_column]:
+                new_board = self.simulate_place_disc(board, try_column, 3 - self.id())
                 if dhw.did_he_win(new_board, 3 - self.id(), try_column):
+                    #  prevent opponent from wining
                     self.place_disc(try_column, "don't loose")
                     return 1
-
-        # don't fall in trap!
-        forbidden_columns = []
-        for try_column in range(0, self.board.shape[1]):
-            if 0 == self.board[0, try_column]:
-                new_board = self.simulate_place_disc(self.board, try_column, self.id())         # my move
-                new_board = self.simulate_place_disc(new_board, try_column, 3 - self.id())      # enemy move
-                if dhw.did_he_win(new_board, 3 - self.id(), try_column):
-                    forbidden_columns.append(try_column)
-
-        # don't ruin my trap
-        less_forbidden_columns = []
-        for try_column in range(0, self.board.shape[1]):
-            if 0 == self.board[0, try_column]:
-                new_board = self.simulate_place_disc(self.board, try_column, 3 - self.id())         # 'my' move
-                new_board = self.simulate_place_disc(new_board, try_column, self.id())              # my move
-                if dhw.did_he_win(new_board, self.id(), try_column):
-                    if try_column not in forbidden_columns:
-                        less_forbidden_columns.append(try_column)
+                else:  # calculate second part of merit function
+                    mf_value[try_column] += self.mf_coeff[6] * cs.merit_function(new_board, 3 - self.id(), try_column,
+                                                                                 self.mf_coeff[0:6])
+                    # pretend this was my move to check if it would ruin my trap
+                    new_board = self.simulate_place_disc(new_board, try_column, self.id())  # my move
+                    if dhw.did_he_win(new_board, self.id(), try_column):
+                        if try_column not in forbidden_columns:
+                            less_forbidden_columns.append(try_column)
 
         # allow forbidden columns if no other choice
-        if np.count_nonzero(self.board[0, :]) == self.board.shape[1] - (len(forbidden_columns) + len(less_forbidden_columns)):
+        if np.count_nonzero(board[0, :]) == width - (len(forbidden_columns) + len(less_forbidden_columns)):
             if 0 != len(less_forbidden_columns):
                 less_forbidden_columns = []     # ruin your trap
             else:
-                forbidden_columns = []      # loose
+                forbidden_columns = []      # lose
 
-        # maximize merit function
-        merit_function = np.ones(self.board.shape[1]) * (-1E100)
-        for try_column in range(0,self.board.shape[1]):
-            if try_column not in forbidden_columns \
-                            and try_column not in less_forbidden_columns \
-                            and self.board[0,try_column] == 0:
-                new_board = self.simulate_place_disc(self.board, try_column, self.id())
-                merit_function[try_column] = cs.merit_function(new_board, self.id(), try_column)
-                # what if I allow to opponent to play this column:
-                new_board = self.simulate_place_disc(self.board, try_column, 3 - self.id())
-                merit_function[try_column] += 0.7 * cs.merit_function(new_board, 3 - self.id(), try_column)
+        # remove MF values for forbidden columns
+        for column in forbidden_columns:
+            mf_value[column] = (-1E100)
+        for column in less_forbidden_columns:
+            mf_value[column] = (-1E100)
 
-        if np.nonzero(merit_function) == 0:     # merit function useless, play randomly
-            rannum = random.randrange(7)
-            while 0 != self.board[0, rannum] or rannum in forbidden_columns or rannum in less_forbidden_columns:
-                rannum = random.randrange(7)
-            self.place_disc(rannum, "random")
-            return 1
-        else:
-            self.place_disc(np.argmax(merit_function), "max merit")
-            return 1
+        self.place_disc(np.argmax(mf_value), "max merit")
+        return 1
 
     def place_disc(self, column, message):
         """ Writes your next play in stdout. """
@@ -184,6 +177,9 @@ class Bot(object):
         elif command == 'action':
             self.set_timeout(int(args[1]))
             self.make_turn()
+
+        elif command == 'mf_coeff':
+            self.mf_coeff = np.fromstring(args[0], sep=',')
 
     def parse_field(self, str_field):
         self.board = np.fromstring(str_field.replace(';', ','), sep=',', dtype=np.uint8).reshape(self.rows(), self.cols())

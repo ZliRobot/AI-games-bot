@@ -87,7 +87,8 @@ def count_open_segments(board, player_id, segment_size):
 
     return open_segments_num
 
-def merit_function(board, player_id):
+
+def merit_function(board, player_id, mf_coeff):
 
     mf_my1 = count_open_segments(board, player_id, 1)
     mf_my2 = count_open_segments(board, player_id, 2)
@@ -97,4 +98,5 @@ def merit_function(board, player_id):
     mf_e2 = count_open_segments(board, 3 - player_id, 2)
     mf_e3 = count_open_segments(board, 3 - player_id, 3)
 
-    return 0 * mf_my1 + 1 * mf_my2 + 5 * mf_my3 - ( mf_e1 + 3 * mf_e2)
+    return mf_coeff[0] * mf_my1 + mf_coeff[1] * mf_my2 + mf_coeff[2] * mf_my3 \
+        - (mf_coeff[3] * mf_e1 + mf_coeff[4] * mf_e2 + mf_coeff[5] * mf_e3)

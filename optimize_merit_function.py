@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import subprocess
-import did_he_win as dhw
-import multiprocessing
+from did_he_win import did_he_win
 import time
+
 start_time = time.time()
 
 
@@ -17,18 +17,18 @@ class Player(object):
     wins2 = 0
     total_rounds = 0.0
 
-    def __init__(self, player_id, type="bot", filename="main.py"):
+    def __init__(self, player_id, type="bot", filename="main.py", mf_coeff=None):
         self.type = type
         self.filename = filename
         self.player_id = player_id
+        self.mf_coeff = mf_coeff
         if self.type == "bot":
             self.input_method = self.bot_init()
             self.input_method.stdin.write(self.start_string())
 
     # transform matrix to string to communicate with bot like engine
     @classmethod       # applies to board, independently of player
-    def mat2str(cls):
-        a = cls.board
+    def mat2str(cls, a):
         s = repr(a).replace('array', '')
         s = s.replace(']]', '')
         s = s.replace('],', ';')
@@ -106,7 +106,7 @@ class Player(object):
     def player_play(self):
         if self.type == "bot":
             self.input_method.stdin.write("update game round %i\n" % self.i_round)
-            self.input_method.stdin.write("update game field %s\n" % self.mat2str())
+            self.input_method.stdin.write("update game field %s\n" % self.mat2str(self.board))
             self.input_method.stdin.write("action move %i\n" % self.t_move)
             return self.input_method.stdout.readline()
         else:
@@ -116,6 +116,14 @@ class Player(object):
                 input_column = input("Column:")
 
             return "place_disc %s" % input_column
+
+    def set_mf_coeff(self,coeff):
+        s = repr(coeff).replace('array', '')
+        s = s.replace(']]', '')
+        s = s.replace('],', ';')
+        s = ''.join([c for c in s if c not in ('(', ')', '[', ']', '\n', ' ')])
+
+        self.input_method.stdin.write("mf_coeff %s\n" % s)
 
 
 def run_oo_test(game_num):
@@ -133,21 +141,29 @@ def run_oo_test(game_num):
         move = curr_player.player_play().rstrip()
         Player.board_update(move, player_id)
 
-        if dhw.did_he_win(Player.board, player_id, int(move.split()[1])):
+        if did_he_win(Player.board, player_id, int(move.split()[1])):
             print "Game %i: player %i win" % (game_num, player_id)
-            if player_id == 1: Player.wins1 += 1
-            if player_id == 2: Player.wins2 += 1
+            if player_id == 1:
+                Player.wins1 += 1
+            elif player_id == 2:
+                Player.wins2 += 1
             Player.total_rounds += Player.i_round
             break
 
 if __name__ == '__main__':
 
     # main - test behaviour
-    num_of_games = 1000
+    num_of_games = 2
     Player.show_moves = "no"
-    player1 = Player(1, type="bot", filename="main_rnd.py")
+
+    player1 = Player(1, type="bot", filename="main.py")
     player2 = Player(2, type="bot", filename="main.py")
     Player.display_board(Player.board, 0, 0)
+
+    mf_coeff1 = np.array([0., 1., 5., -1., -3., 0., 0.7])
+    mf_coeff2 = np.array([0., 1., 5., -1., -3., 0., 0.7])
+    player1.set_mf_coeff(mf_coeff1)
+    player2.set_mf_coeff(mf_coeff2)
 
     for game in range(0, num_of_games):
         run_oo_test(game)

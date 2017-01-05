@@ -1,9 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import subprocess
-import did_he_win as dhw
+from did_he_win import did_he_win
 import time
+import os
 start_time = time.time()
+
 
 class Player(object):
 
@@ -36,43 +38,24 @@ class Player(object):
         column = move.split()[1]
 
         if 0 != cls.board[0, column]:
-            print "test.py: Error - full column"
+            print "test_OO.py: Error - full column"
 
         raw = cls.board.shape[0] - 1
-        new_board = np.copy(cls.board)
-        while new_board[raw, column] != 0:
+        while cls.board[raw, column] != 0:
             raw -= 1
 
-        new_board[raw, column] = player_id
-        cls.display_board(new_board, column, player_id)
+        cls.board[raw, column] = player_id
+        if cls.show_moves == "yes":
+            cls.display_board(cls.board, column, player_id)
 
     @classmethod
     def display_board(cls, new_board, column, player_id):
         # display board
 
-        if cls.show_moves == "yes":
-            print column
-            cls.board = new_board
-            plt.imshow(cls.board, interpolation="nearest")
-            plt.show(block=False)
-            plt.pause(0.3)
-        elif cls.show_moves == "animate":
-            print column
-            temp_board = np.copy(cls.board)
-            temp_board[0, column] = player_id
-            plt.imshow(temp_board, interpolation="nearest")
-            plt.show(block=False)
-            plt.pause(0.01)
-            raw = 1
-            while raw < temp_board.shape[0] and temp_board[raw, column] == 0:
-                temp_board[raw - 1, column] = 0
-                temp_board[raw, column] = player_id
-                plt.imshow(temp_board, interpolation="nearest")
-                plt.pause(0.00001)
-                raw += 1
-            cls.board = new_board
-        else:
-            cls.board = new_board
+        print column
+        plt.imshow(cls.board, interpolation="nearest")
+        plt.show(block=False)
+        plt.pause(0.3)
 
     @classmethod
     def reset_board(cls):
@@ -103,28 +86,42 @@ class Player(object):
             self.input_method.stdin.write("update game round %i\n" % self.i_round)
             self.input_method.stdin.write("update game field %s\n" % self.mat2str())
             self.input_method.stdin.write("action move %i\n" % self.t_move)
-            return self.input_method.stdout.readline()
+            result = self.input_method.stdout.readline()
+            if len(result) < 250:
+                return result
+            else:
+                for line in range(1, 20):
+                    print result
+                    result = self.input_method.stdout.readline()
+                return -1
         else:
             input_column = input("Column:")
-            while input_column not in range(0, self.board.shape[1]) and self.board[0,input_column] != 0:
-                print "Number of column must be in range 0-6, column must have at last one free space"
-                input_column = input("Column:")
+            check = "wrong"
+            while check != "ok":
+                if 0 <= input_column < self.board.shape[1]:
+                    if self.board[0, input_column] == 0:
+                        check = "ok"
+                else:
+                    print "Number of column must be in range 0-6, column must have at last one free space"
+                    input_column = input("Column:")
 
             return "place_disc %s" % input_column
 
-
 # main - test behaviour
-num_of_games = 100
+num_of_games = 10
 wins1 = 0
 wins2 = 0
 rounds = 0.0
 Player.show_moves = "no"
-player1 = Player(1, type="bot", filename="main_rnd.py")
-player2 = Player(2, type="bot", filename="main.py")
-Player.display_board(Player.board, 0, 0)
+player1 = Player(1, type="bot", filename="main_search.py")
+player2 = Player(2, type="bot", filename="main_rnd.py")
+
 
 for game_num in range(0, num_of_games):
     Player.reset_board()
+
+    if Player.show_moves == "yes":
+        Player.display_board(Player.board, 0, 0)
 
     for Player.i_round in range(1, 43):
 
@@ -137,14 +134,20 @@ for game_num in range(0, num_of_games):
         move = curr_player.player_play().rstrip()
         Player.board_update(move, player_id)
 
-        if dhw.did_he_win(Player.board, player_id, int(move.split()[1])):
+        if did_he_win(Player.board, player_id, int(move.split()[1])):
             print "Game %i: player %i win" % (game_num, player_id)
-            if player_id == 1: wins1 += 1
-            if player_id == 2: wins2 += 1
+            if player_id == 1:
+                wins1 += 1
+                if Player.show_moves == "yes":
+                    os.system('say "Human wins"')
+            elif player_id == 2:
+                wins2 += 1
+                if Player.show_moves == "yes":
+                    os.system('say "Computer wins"')
             rounds += Player.i_round
             break
-
-    #print("round %i" % Player.i_round)
+        if Player.i_round == 42:
+            print "Game %i: Draw" % game_num
 
 print "player1 won %i times" % wins1
 print "player2 won %i times" % wins2
@@ -158,6 +161,5 @@ plt.ioff()
 plt.show()
 
 print "time elapsed: {:.2f}s".format(time.time() - start_time)
-#  beep at the end
-import os
-#os.system('say -v "Whisper" "your program has finished"')
+
+os.system('say "your program has finished"')

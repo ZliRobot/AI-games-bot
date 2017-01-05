@@ -12,10 +12,11 @@
 # ------------------------------------------------------------------- #
 
 from sys import stdin, stdout
-import count_open_segments_full as cs
+import count_open_segmets_full as csf
 import did_he_win as dhw
 import numpy as np
 import time
+import os
 
 
 class Bot(object):
@@ -24,12 +25,19 @@ class Bot(object):
     round = -1
     board = np.zeros((6, 7), dtype=np.uint8)  # Access with [row_nr, col_nr]. [0,0] is on the top left.
     timeout = -1
-    mf_coeff = np.array([0., 1., 5., -1., -3., 100000., 0.7])
+    mf_coeff = np.array([0., 1., 5., 1., 3., 100.])
 
     def make_turn(self):
         """ This method is for calculating and executing the next play.
             Make the play by calling place_disc exactly once.
         """
+
+        # if play first, start in the middle
+        if np.count_nonzero(self.board) == 0:
+            self.place_disc(self.board.shape[1] / 2, "middle")
+            return 1
+
+        # else
         max_search_level = 2
         start_level = 0  # start search from level 0
 
@@ -40,9 +48,9 @@ class Bot(object):
 
     def search_tree(self, player, board, level, max_level):
         level += 1
-        mf_value = np.ones(self.board.shape[1]) * -100
+        mf_value = np.ones(self.board.shape[1]) * -10000
 
-        for try_column in range(0, 6):
+        for try_column in [3, 4, 2, 5, 1, 6, 0]:
             if board[0, try_column] == 0:
 
                 new_board = self.simulate_place_disc(board, try_column, player)
@@ -56,7 +64,7 @@ class Bot(object):
                     if dhw.did_he_win(new_board, player, try_column):
                         mf_value[try_column] = 1000
                     else:
-                        mf_value[try_column] = cs.merit_function(new_board, player, try_column, self.mf_coeff[0:6])
+                        mf_value[try_column] = csf.merit_function(new_board, player, self.mf_coeff)
 
         return np.argmax(mf_value), np.max(mf_value)
 

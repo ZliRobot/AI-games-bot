@@ -29,6 +29,12 @@ class Bot(object):
         """ This method is for calculating and executing the next play.
             Make the play by calling place_disc exactly once.
         """
+        # if play first, start in the middle
+        if np.count_nonzero(self.board) == 0:
+            self.place_disc(self.board.shape[1] / 2)
+            return 1
+
+
         # win if possible
         for try_column in range(0,self.board.shape[1]):
             if 0 == self.board[0, try_column]:
