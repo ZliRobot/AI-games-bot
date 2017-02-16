@@ -108,12 +108,12 @@ class Player(object):
             return "place_disc %s" % input_column
 
 # main - test behaviour
-num_of_games = 10
+num_of_games = 1
 wins1 = 0
 wins2 = 0
 rounds = 0.0
-Player.show_moves = "no"
-player1 = Player(1, type="bot", filename="main_search.py")
+Player.show_moves = "yes"
+player1 = Player(1, type="human", filename="main_search.py")
 player2 = Player(2, type="bot", filename="main_rnd.py")
 
 
@@ -162,4 +162,4 @@ plt.show()
 
 print "time elapsed: {:.2f}s".format(time.time() - start_time)
 
-os.system('say "your program has finished"')
+#os.system('say "your program has finished"')

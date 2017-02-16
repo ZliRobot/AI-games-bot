@@ -38,9 +38,13 @@ class Bot(object):
             return 1
 
         # else
-        max_search_level = 2
+        max_search_level = 7
         start_level = 0  # start search from level 0
 
+        # re-initialise dictionary
+        self.checked = {}
+
+        # run search
         move, merit = self.search_tree(self.id(), self.board, start_level, max_search_level)
 
         self.place_disc(move, merit)
@@ -54,17 +58,31 @@ class Bot(object):
             if board[0, try_column] == 0:
 
                 new_board = self.simulate_place_disc(board, try_column, player)
+
+                # if this possibility was already tested, return old result
+                status_key = ''.join(''.join('%d' % x for x in y) for y in new_board)
+                if status_key in self.checked:
+                    return self.checked[status_key][0], self.checked[status_key][1]
+
+                # else, calculate it
                 if level < max_level:
                     if dhw.did_he_win(new_board, player, try_column):
                         mf_value[try_column] = 1000
+                        self.checked[status_key] = [try_column, 1000]
                     else:
                         potential_move, mf_value[try_column] = self.search_tree(3-player, new_board, level, max_level)
                         mf_value[try_column] *= -1
+                        self.checked[status_key] = [try_column, mf_value[try_column]]
                 else:
                     if dhw.did_he_win(new_board, player, try_column):
                         mf_value[try_column] = 1000
+                        self.checked[status_key] = [try_column, 1000]
                     else:
-                        mf_value[try_column] = csf.merit_function(new_board, player, self.mf_coeff)
+                        mf_value[try_column] = 0 # csf.merit_function(new_board, player, self.mf_coeff)
+                        self.checked[status_key] = [try_column, mf_value[try_column]]
+
+        while self.board[0, np.argmax(mf_value)] > 0:
+            mf_value[np.argmax(mf_value)] = np.min(mf_value) - 1
 
         return np.argmax(mf_value), np.max(mf_value)
 
